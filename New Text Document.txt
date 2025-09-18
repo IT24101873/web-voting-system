@@ -1,0 +1,4 @@
+spring.datasource.url=jdbc:h2:file:./data/upeksha
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=Upeksha
+spring.datasource.password=1234

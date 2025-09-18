@@ -1,0 +1,2 @@
+DELETE from USER_REGISTRATION where ID='IT24101952';
+select * from ROLE;
