@@ -1,4 +1,7 @@
-package com.example.votingsystem.votingsettings;
+package com.example.votingsystem.votingSettings;
 
-public class VotingSettingsRepository {
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface VotingSettingsRepository extends JpaRepository<VotingSettings, Long> {
 }
