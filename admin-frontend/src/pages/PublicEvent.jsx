@@ -1,4 +1,3 @@
-// src/pages/PublicEvent.jsx
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getPublicEventBundle } from "../api.js";
@@ -43,6 +42,35 @@ export default function PublicEvent() {
   const [bundle, setBundle] = useState({ event: null, categories: [], nominees: [] });
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+
+  // Scroll state for header effects
+  const [navScrolled, setNavScrolled] = useState(false);
+  const [navHidden, setNavHidden] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  /* ---- Scroll Header Effect ---- */
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      if (currentScrollY > 100) {
+        setNavScrolled(true);
+      } else {
+        setNavScrolled(false);
+      }
+
+      if (currentScrollY > lastScrollY && currentScrollY > 200) {
+        setNavHidden(true);
+      } else {
+        setNavHidden(false);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
 
   useEffect(() => {
     let ok = true;
@@ -89,8 +117,8 @@ export default function PublicEvent() {
 
   return (
     <div className="public-event">
-      {/* === Modern Top Bar (No colorful glow) === */}
-      <header className="vh__topbar">
+      {/* === Modern Top Bar with Scroll Effects === */}
+      <header className={`vh__topbar ${navScrolled ? 'scrolled' : ''} ${navHidden ? 'hidden' : ''}`}>
         <div className="vh__topbar-inner">
           <Link to="/events" className="vh__brand" aria-label="Back to Events">
             <div className="vh__logo">🎓</div>
@@ -270,6 +298,8 @@ function NomineeCard({ nominee, totalVotes = 0 }) {
     photoSrc = `${API_BASE}/api/nominees/${pid}/photo`;
   }
 
+  const hasPhoto = !!photoSrc;
+  
   const votes = valueNum(
     nominee.voteCount ?? nominee.votes ?? nominee.count ?? nominee.totalVotes ?? nominee.vote
   ) ?? 0;
@@ -288,16 +318,86 @@ function NomineeCard({ nominee, totalVotes = 0 }) {
   return (
     <div className="pe-nom-card">
       <div className="pe-nom-imgwrap">
-        {photoSrc ? (
-          <img
-            src={photoSrc}
-            alt={nominee.name}
-            className="pe-nom-img"
-            onError={(e) => { e.currentTarget.style.display = "none"; }}
-          />
+        {hasPhoto ? (
+          <>
+            <img
+              src={photoSrc}
+              alt={nominee.name}
+              className="pe-nom-img"
+              onError={(e) => { 
+                e.currentTarget.style.display = "none";
+                // Show placeholder when image fails to load
+                const placeholder = e.currentTarget.nextElementSibling;
+                if (placeholder) {
+                  placeholder.style.display = "flex";
+                  placeholder.classList.add("pe-nom-fallback--visible");
+                }
+              }}
+            />
+            {/* Fallback placeholder - hidden by default, shown on error */}
+            <div 
+              className="pe-nom-fallback"
+              style={{ display: "none" }}
+            >
+              <div style={{ 
+                width: "48px", 
+                height: "48px", 
+                marginBottom: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}>
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none">
+                  <path
+                    d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2v11Z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <circle
+                    cx="12"
+                    cy="13"
+                    r="4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  />
+                </svg>
+              </div>
+              <span>No Photo</span>
+            </div>
+          </>
         ) : (
-          <div className="pe-nom-fallback">
-            <IconUser />
+          /* No photo placeholder - shown when no photo source available */
+          <div className="pe-nom-fallback pe-nom-fallback--visible">
+            <div style={{ 
+              width: "48px", 
+              height: "48px", 
+              marginBottom: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <svg viewBox="0 0 24 24" width="48" height="48" fill="none">
+                <path
+                  d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2v11Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <circle
+                  cx="12"
+                  cy="13"
+                  r="4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                />
+              </svg>
+            </div>
+            <span>No Photo</span>
           </div>
         )}
 

@@ -71,7 +71,7 @@ async function fetchLeaders(categoryId, topN = 3) {
     try {
       const { data } = await api.get(url, cfg);
       return Array.isArray(data) ? data : [];
-    } catch {}
+    } catch { /* empty */ }
   }
   return [];
 }
@@ -92,7 +92,7 @@ async function fetchGenders(categoryId) {
           value: Number(v) || 0,
         }));
       }
-    } catch {}
+    } catch { /* empty */ }
   }
   return [];
 }
@@ -109,7 +109,7 @@ async function fetchVotesByDay(categoryId) {
     try {
       const { data } = await api.get(url, cfg);
       return normalizeVotesByDay(data);
-    } catch {}
+    } catch { /* empty */ }
   }
   return [];
 }
@@ -167,7 +167,7 @@ async function fetchParticipation(categoryId) {
           ];
         }
       }
-    } catch {}
+    } catch { /* empty */ }
   }
   return [];
 }
@@ -193,7 +193,7 @@ async function fetchPublicViews(categoryId) {
         }))
         .filter((v) => v.showPublic !== false);
     }
-  } catch {}
+  } catch { /* empty */ }
 
   // Fallback: admin list (filter public)
   try {
@@ -210,7 +210,7 @@ async function fetchPublicViews(categoryId) {
         chartType: String(v.chartType || v.type || "").toUpperCase(),
         topN: v.topN ?? v.limit ?? 3,
       }));
-  } catch {}
+  } catch { /* empty */ }
 
   return [];
 }
@@ -260,7 +260,7 @@ export default function PublicCategoryCharts({ categoryId }) {
           } else if (v.metric === "PARTICIPATION") {
             data = await fetchParticipation(categoryId);
           }
-        } catch {}
+        } catch { /* empty */ }
         out.push({ chartType: v.chartType, data, title: v._title });
       }
 

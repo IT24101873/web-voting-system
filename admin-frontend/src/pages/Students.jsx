@@ -57,7 +57,7 @@ const Icon = {
   ),
   Award: (p) => (
     <svg viewBox="0 0 24 24" width="16" height="16" {...p}>
-      <path fill="currentColor" d="M12 2a7 7 0 100 14 7 7 0 000-14zm0 16c-3.31 0-10 1.66-10 5v1h20v-1c0-3.34-6.69-5-10-5z"/>
+      <path fill="currentColor" d="M17 4a2 2 0 0 1 2 2v4l2 2-2 2v4a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-4l-2-2 2-2V6a2 2 0 0 1 2-2h10zm-5 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
     </svg>
   ),
   User: (p) => (

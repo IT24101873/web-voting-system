@@ -12,6 +12,15 @@ function pickRole(data) {
 function isAdminRole(role) { return role === "ADMIN" || role === "ROLE_ADMIN"; }
 function isOrganizerRole(role) { return role === "ORGANIZER" || role === "ROLE_ORGANIZER"; }
 function isStudentRole(role) { return role === "STUDENT" || role === "ROLE_STUDENT"; }
+/* ADDED: IT Coordinator role helper */
+function isItcRole(role) {
+  return (
+    role === "IT_COORDINATOR" ||
+    role === "ROLE_IT_COORDINATOR" ||
+    role === "ITC" ||
+    role === "ROLE_ITC"
+  );
+}
 
 const VOTING_URL = import.meta.env.VITE_VOTING_URL || "http://localhost:5175";
 
@@ -95,7 +104,7 @@ export default function Login() {
 
   /* clear any stale cross-route toast on entry */
   useEffect(() => {
-    try { sessionStorage.removeItem("nav_toast"); } catch {}
+    try { sessionStorage.removeItem("nav_toast"); } catch { /* empty */ }
   }, []);
 
   /* ---------- shared ---------- */
@@ -169,13 +178,16 @@ export default function Login() {
         localStorage.setItem("admin_auth", JSON.stringify(payload));
         const base = import.meta.env.VITE_NOMINEE_URL || "http://localhost:5173";
         window.location.href = `${base}/?token=${encodeURIComponent(data.token || "")}`;
+      } else if (isItcRole(role)) { /* ADDED: IT Coordinator branch */
+        localStorage.setItem("admin_auth", JSON.stringify(payload));
+        nav("/itc", { replace: true });
       } else if (isStudentRole(role)) {
         try {
           sessionStorage.setItem(
             "nav_toast",
             JSON.stringify({ ts: Date.now(), kind: "success", message: "Logged in successfully." })
           );
-        } catch {}
+        } catch { /* empty */ }
 
         const url = new URL("/bridge", VOTING_URL);
         url.searchParams.set("toast", "login");

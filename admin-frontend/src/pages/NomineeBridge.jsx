@@ -1,4 +1,3 @@
-// admin-frontend/src/pages/NomineeBridge.jsx
 import { useEffect } from "react";
 
 function readAdminToken() {

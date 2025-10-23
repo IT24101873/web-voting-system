@@ -105,6 +105,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/dashboard/**").hasRole("ADMIN")
                         .requestMatchers("/api/results/**").hasRole("ADMIN")
 
+                        .requestMatchers("/api/itc/**").hasRole("IT_COORDINATOR")
+
                         .requestMatchers("/api/public/students/**").permitAll()
 
                         .requestMatchers("/api/auth/forgot", "/api/auth/reset").permitAll()

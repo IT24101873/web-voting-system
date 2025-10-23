@@ -10,8 +10,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 public class DataSeeder {
+
     @Bean
-    CommandLineRunner seedUsers(UserRepository repo, PasswordEncoder enc){
+    CommandLineRunner seedUsers(UserRepository repo, PasswordEncoder enc) {
         // Runs at app startup; creates default users if they don't exist
         return args -> {
             if (!repo.existsByUsername("admin")) {
@@ -22,6 +23,9 @@ public class DataSeeder {
             }
             if (!repo.existsByUsername("student")) {
                 repo.save(new User("student", enc.encode("123"), Role.STUDENT));
+            }
+            if (!repo.existsByUsername("itc")) {
+                repo.save(new User("itc", enc.encode("123"), Role.IT_COORDINATOR));
             }
         };
     }

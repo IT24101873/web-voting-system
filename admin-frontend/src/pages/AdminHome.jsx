@@ -33,7 +33,7 @@ function Toast({ toast, onClose }) {
   );
 }
 
-/* ---- Inline SVG icons ---- */
+/* ---- Inline SVG icons - Updated to match other pages ---- */
 const Icon = {
   Star: (p) => (
     <svg viewBox="0 0 24 24" width="24" height="24" {...p}>
@@ -57,13 +57,12 @@ const Icon = {
   ),
   Award: (p) => (
     <svg viewBox="0 0 24 24" width="16" height="16" {...p}>
-      <circle cx="12" cy="8" r="6" fill="currentColor"/>
-      <path fill="currentColor" d="M15.75 8l1.5 8-5.25-3-5.25 3 1.5-8"/>
+      <path fill="currentColor" d="M17 4a2 2 0 0 1 2 2v4l2 2-2 2v4a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-4l-2-2 2-2V6a2 2 0 0 1 2-2h10zm-5 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
     </svg>
   ),
-  UserCircle: (p) => (
+  User: (p) => (
     <svg viewBox="0 0 24 24" width="16" height="16" {...p}>
-      <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2a7.2 7.2 0 01-6-3.22c.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08a7.2 7.2 0 01-6 3.22z"/>
+      <path fill="currentColor" d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z"/>
     </svg>
   ),
   ArrowLeft: (p) => (
@@ -86,24 +85,24 @@ function AdminHeader({ onLogout }) {
 
         <div className="subnav__links">
           <NavLink to="/admin" end className={linkCls} title="Home">
-            <Icon.Home /><span className="subnav__text">Home</span>
+            <Icon.Home style={{ display: 'block' }} /><span className="subnav__text">Home</span>
           </NavLink>
           <NavLink to="/admin/dashboard" className={linkCls} title="Dashboard">
-            <Icon.Dashboard /><span className="subnav__text">Dashboard</span>
+            <Icon.Dashboard style={{ display: 'block' }} /><span className="subnav__text">Dashboard</span>
           </NavLink>
           <NavLink to="/admin/results-analytics" className={linkCls} title="Analytics">
-            <Icon.Chart /><span className="subnav__text">Analytics</span>
+            <Icon.Chart style={{ display: 'block' }} /><span className="subnav__text">Analytics</span>
           </NavLink>
           <NavLink to="/admin/results" className={linkCls} title="Results">
-            <Icon.Award /><span className="subnav__text">Publish Winners</span>
+            <Icon.Award style={{ display: 'block' }} /><span className="subnav__text">Publish Winners</span>
           </NavLink>
           <NavLink to="/admin/students" className={linkCls} title="Students">
-            <Icon.UserCircle /><span className="subnav__text">Students</span>
+            <Icon.User style={{ display: 'block' }} /><span className="subnav__text">Students</span>
           </NavLink>
         </div>
 
         <button type="button" className="subnav__logout" onClick={onLogout} title="Logout">
-          <Icon.ArrowLeft /> Logout
+          <Icon.ArrowLeft style={{ display: 'block' }} /> Logout
         </button>
       </div>
     </nav>
@@ -314,13 +313,13 @@ export default function AdminHome({ onLogout }) {
             <div className="admin-home__activity-item">
               <div className="admin-home__activity-icon">🏷️</div>
               <div className="admin-home__activity-content">
-                <p className="admin-home__activity-text">Created category “Best Community Impact”</p>
+                <p className="admin-home__activity-text">Created category "Best Community Impact"</p>
                 <span className="admin-home__activity-time">1 hour ago</span>
               </div>
             </div>
             <div className="admin-home__activity-item">
               <div className="admin-home__activity-content">
-                <p className="admin-home__activity-text">5 new nominees added to “Best Performance”</p>
+                <p className="admin-home__activity-text">5 new nominees added to "Best Performance"</p>
                 <span className="admin-home__activity-time">3 hours ago</span>
               </div>
             </div>

@@ -1,4 +1,3 @@
-// admin-frontend/src/pages/NotifiBridge.jsx
 import { useEffect } from "react";
 
 function readAdminToken() {
