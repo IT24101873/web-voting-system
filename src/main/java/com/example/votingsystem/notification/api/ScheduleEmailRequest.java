@@ -6,18 +6,19 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Instant;
 import java.util.List;
 
+// Request body for scheduling an email
 public class ScheduleEmailRequest {
     @NotEmpty(message = "At least one recipient is required")
-    private List<@NotBlank String> recipients;
+    private List<@NotBlank String> recipients; // list of email addresses (no blanks)
 
     @NotBlank
-    private String subject;
+    private String subject; // email subject (required)
 
     @NotBlank
-    private String body;
+    private String body; // email body/content (required)
 
     @NotNull
-    private Instant sendAtUtc;
+    private Instant sendAtUtc; // when to send (UTC time, required)
 
     public List<String> getRecipients() { return recipients; }
     public void setRecipients(List<String> recipients) { this.recipients = recipients; }

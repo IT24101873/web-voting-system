@@ -22,17 +22,16 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Service
+@Service // Handles creating, scheduling, sending, and managing notifications
 public class NotificationService {
-    private final NotificationRepository repo;
-    private final JavaMailSender mailSender;
-    private static final AtomicInteger BATCH_SEQ = new AtomicInteger(0);
+    private final NotificationRepository repo;  // DB access
+    private final JavaMailSender mailSender;    // email sender
+    private static final AtomicInteger BATCH_SEQ = new AtomicInteger(0); // daily batch counter
     private static final DateTimeFormatter DAY_FMT = DateTimeFormatter.BASIC_ISO_DATE; // YYYYMMDD
-    private static final ZoneId SG = ZoneId.of("Asia/Singapore");
-
+    private static final ZoneId SG = ZoneId.of("Asia/Singapore"); // for batch IDs
 
     // tune as you like
-    private static final int MAX_ATTEMPTS = 3;
+    private static final int MAX_ATTEMPTS = 3; // retry limit
 
     public NotificationService(NotificationRepository repo, JavaMailSender mailSender) {
         this.repo = repo;
@@ -41,6 +40,7 @@ public class NotificationService {
 
     // ======================== READ/UPDATE SINGLE ========================
 
+    // Get one notification or fail
     public Notification one(Long id) {
         return repo.findById(id).orElseThrow(() -> new IllegalArgumentException("Notification not found: " + id));
     }
@@ -81,7 +81,7 @@ public class NotificationService {
             n.setCreatedAt(Instant.now());
             // immediate send path (scheduledFor null or now – we’ll just send)
             repo.save(n);
-            result.add(trySend(n));
+            result.add(trySend(n)); // try to send right away
         }
         return result;
     }
@@ -96,7 +96,7 @@ public class NotificationService {
             throw new IllegalArgumentException("sendAtUtc must be in the future");
         }
 
-        String batchId = generateFriendlyBatchId();
+        String batchId = generateFriendlyBatchId(); // same batch id for the group
 
         List<Notification> result = new ArrayList<>();
         for (String to : recipients) {
@@ -107,7 +107,7 @@ public class NotificationService {
             n.setBody(req.getBody());
             n.setStatus(Status.PENDING);
             n.setCreatedAt(Instant.now());
-            n.setScheduledFor(req.getSendAtUtc());
+            n.setScheduledFor(req.getSendAtUtc()); // will be sent later by scheduler
             result.add(repo.save(n));
         }
         return result;
@@ -134,6 +134,7 @@ public class NotificationService {
 
     // ======================== RESCHEDULE / CANCEL / RESEND ========================
 
+    // Change scheduled time (must be future)
     public Notification reschedule(Long id, Instant when) {
         if (when == null) throw new IllegalArgumentException("sendAtUtc is required");
         if (when.isBefore(Instant.now())) throw new IllegalArgumentException("sendAtUtc must be in the future");
@@ -147,6 +148,7 @@ public class NotificationService {
         return repo.save(n);
     }
 
+    // Mark as cancelled (set FAILED with message)
     public Notification cancel(Long id) {
         Notification n = one(id);
         if (n.getStatus() == Status.SENT) throw new IllegalStateException("Already sent.");
@@ -180,12 +182,13 @@ public class NotificationService {
         due.addAll(repo.findTop100ByStatusAndScheduledForIsNullOrderByCreatedAtAsc(Status.PENDING));
 
         for (Notification n : due) {
-            trySend(n);
+            trySend(n); // send each due item
         }
     }
 
     // ======================== CORE SEND ========================
 
+    // Try to send an email; update status/attempts accordingly
     public Notification trySend(Notification n) {
         try {
             MimeMessage mime = mailSender.createMimeMessage();
@@ -194,41 +197,43 @@ public class NotificationService {
                     MimeMessageHelper.MULTIPART_MODE_NO,
                     StandardCharsets.UTF_8.name()
             );
-            helper.setFrom(new InternetAddress("kavishalakshan706@gmail.com", "The Bright Future Student Awards Voting Portal"));
+            helper.setFrom(new InternetAddress("kavishalakshan706@gmail.com", "The Bright Future Student Awards Voting Portal")); // sender
             helper.setTo(n.getRecipient());
             helper.setSubject(n.getSubject());
-            helper.setText(n.getBody(), false);
+            helper.setText(n.getBody(), false); // plain text
 
-            mailSender.send(mime);
+            mailSender.send(mime); // send email
 
             n.setStatus(Status.SENT);
             n.setSentAt(Instant.now());
             n.setError(null);
         } catch (Exception ex) {
-            n.setAttempts(n.getAttempts() + 1);
+            n.setAttempts(n.getAttempts() + 1); // count failure
             n.setError(ex.getMessage());
             if (n.getAttempts() >= MAX_ATTEMPTS) {
-                n.setStatus(Status.FAILED);
+                n.setStatus(Status.FAILED); // give up
             } else {
-                n.setStatus(Status.PENDING);
+                n.setStatus(Status.PENDING); // retry later
                 // simple backoff: retry in 60s
                 n.setScheduledFor(Instant.now().plusSeconds(60));
             }
         }
-        return repo.save(n);
+        return repo.save(n); // persist changes
     }
 
     // ======================== LISTING / ARCHIVE / DELETE ========================
 
+    // List all notifications (newest first)
     public List<Notification> listAllDesc() { return repo.findAllDesc(); }
 
+    // Active vs archived lists
     public List<Notification> getActiveNotifications() { return repo.findByArchivedFalse(); }
     public List<Notification> getArchivedNotifications() { return repo.findByArchivedTrue(); }
 
     @Transactional
     public boolean archive(Long id) {
         return repo.findById(id).map(n -> {
-            n.setArchived(true);
+            n.setArchived(true); // move to archive
             repo.save(n);
             return true;
         }).orElse(false);
@@ -237,7 +242,7 @@ public class NotificationService {
     @Transactional
     public boolean restore(Long id) {
         return repo.findById(id).map(n -> {
-            n.setArchived(false);
+            n.setArchived(false); // restore from archive
             repo.save(n);
             return true;
         }).orElse(false);
@@ -252,20 +257,22 @@ public class NotificationService {
 
     @Transactional
     public void deleteAllArchived() {
-        repo.deleteAll(repo.findByArchivedTrue());
+        repo.deleteAll(repo.findByArchivedTrue()); // bulk delete archived
     }
 
     @Transactional
     public void hardDelete(Long id) {
-        repo.deleteById(id);
+        repo.deleteById(id); // delete one by id
     }
 
     // ======================== HELPERS ========================
 
+    // Ensure required text fields are present
     private static void validateRequired(String v, String field) {
         if (v == null || v.isBlank()) throw new IllegalArgumentException(field + " is required");
     }
 
+    // Basic email validation using InternetAddress
     private static void validateEmail(String email) {
         try {
             new InternetAddress(email, true).validate();
@@ -291,6 +298,7 @@ public class NotificationService {
         return new ArrayList<>(set);
     }
 
+    // Create a readable batch id like B-20250921-0007
     private static String generateFriendlyBatchId() {
         String today = java.time.LocalDate.now(SG).format(DAY_FMT); // e.g. 20250921
         int seq = BATCH_SEQ.updateAndGet(v -> (v >= 9999) ? 1 : v + 1);

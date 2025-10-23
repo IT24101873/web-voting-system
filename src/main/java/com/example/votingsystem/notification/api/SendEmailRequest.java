@@ -4,15 +4,16 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 
+// Request body for sending an email now
 public class SendEmailRequest {
     @NotEmpty(message = "At least one recipient is required")
-    private List<@NotBlank String> recipients;
+    private List<@NotBlank String> recipients; // list of email addresses (no blanks)
 
     @NotBlank
-    private String subject;
+    private String subject; // email subject (required)
 
     @NotBlank
-    private String body;
+    private String body; // email content (required)
 
     public List<String> getRecipients() { return recipients; }
     public void setRecipients(List<String> recipients) { this.recipients = recipients; }
