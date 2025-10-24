@@ -1,80 +1,154 @@
-# Web-based Voting System for Award Nominations
+# Notification & Email Reminder System
 
-## 📌 Project Overview  
-This system is developed as part of the **SE2030 – Software Engineering** group assignment (Year 2, Semester 1).  
-It is a **Java-based web application** that allows final-year students to participate in award voting events while ensuring fairness, transparency, and automation.  
-
-The system follows **Agile principles**, applies **SDLC stages**, and uses **UML modeling** (Use Case & Activity Diagrams).  
-Each group member was responsible for a **major function** of the system.  
+## 👤 Author  
+**Name:** Liyanage J. L. K. L.  
+**IT Number:** IT24101927  
+**Module:** Notification & Email Reminder System  
 
 ---
 
-## 👥 Group Members & Responsibilities  
+## 📝 Overview  
+This module is part of the **Web-based Voting System for Award Nominations**.  
+It automates communication with students and staff by sending email notifications and reminders related to voting events.  
 
-| IT Number   | Name                | Major Function                          |
-|-------------|---------------------|-----------------------------------------|
-| IT24101873  | Jesmeen M.B.A       | Voting Management                       |
-| IT24101829  | Ranasinghe R.P.V.K. | Award Categories & Nominee Management   |
-| IT24101927  | Liyanage J. L. K. L.| Notification & Email Reminder System    |
-| IT24103815  | Fernando W.P.S.     | Voting Progress Dashboard               |
-| IT24101972  | Nethsara K.P.S      | Results & Report Management             |
-| IT24101952  | Senevirathna U.K.J. | Access Control & Password Management    |
-
----
-
-## 📝 Core Functions  
-
-### 1. Voting Management (Jesmeen M.B.A)  
-- Cast a vote (one per category)  
-- Prevent duplicate voting  
-- Review and confirm selections  
-- Enforce voting deadlines  
-
-### 2. Award Categories & Nominee Management (Ranasinghe R.P.V.K.)  
-- Create/update award categories  
-- Add/edit/delete nominees  
-- Upload nominee bios & photos  
-- Control voting start/end times  
-
-### 3. Notification & Email Reminder System (Liyanage J. L. K. L.)  
-- Send automated email reminders  
-- Notify students of deadlines & results  
-- Manage notification templates  
-- Log all communication  
-
-### 4. Voting Progress Dashboard (Fernando W.P.S.)  
-- Display real-time voting statistics  
-- Track participation & irregularities  
-- Provide filters by category  
-- Export progress reports  
-
-### 5. Results & Report Management (Nethsara K.P.S.)  
-- Generate final results  
-- Publish winners after voting ends  
-- Archive past results  
-- Export reports  
-
-### 6. Access Control & Password Management (Senevirathna U.K.J.)  
-- Role-based access (Admin, Organizer, Student, IT Staff)  
-- Secure login and password reset  
-- Account lock after multiple failed logins  
-- Restrict access to eligible users  
+**Key responsibilities:**  
+- Notify students about voting timelines and deadlines  
+- Send scheduled or instant email reminders  
+- Announce result releases  
+- Provide an interface for admins to manage notification templates  
+- Maintain a log of communication activity  
 
 ---
 
-## 🏗️ System Architecture & Workflow  
+## 🎯 Features  
+- Compose and send notifications  
+- Support for **instant sending** or **scheduled delivery**  
+- Email delivery via **SMTP (Gmail / Mailhog)**  
+- Linked with student voting events  
+- UI for composing and managing notifications  
+- Error handling and scheduling updates  
 
-1. **Login & Access Control** → Role-based access granted.  
-2. **Voting Process** → Students cast votes securely.  
-3. **Nominee Management** → Admin manages categories & nominees.  
-4. **Notification System** → Students reminded about deadlines/results.  
-5. **Dashboard Monitoring** → Organizers track real-time progress.  
-6. **Result Publishing** → Final reports generated & winners announced.  
+---
+
+## 🏗️ Workflow  
+1. Admin logs in and accesses the Notification Dashboard.  
+2. Admin composes a notification.  
+3. Admin chooses to send **now** or **schedule** for later.  
+4. System validates and queues the notification.  
+5. Email is delivered to student recipients.  
+6. All actions are logged for future reference.  
+
+---
+
+## 📂 Relevant File Structure  
+```
+src/
+ └── main/java/com/example/votingsystem/notification/
+      ├── api/NotificationController.java
+      ├── model/Notification.java
+      ├── repo/NotificationRepository.java
+      └── service/NotificationService.java
+
+frontend/
+ └── src/pages/NotificationPage.jsx
+```
 
 ---
 
 ## ⚙️ Tech Stack  
 - **Backend:** Spring Boot (Java 17), Spring Data JPA  
-- **Frontend:** React (Vite, Tailwind, Shadcn UI)  
 - **Database:** H2 (Dev) / MySQL (Prod)  
-- **Email Service:** Gmail SMTP / Mailhog (for local testing)  
+- **Email:** Gmail SMTP / Mailhog (local testing)  
+- **Frontend:** React (Vite, Tailwind, Shadcn UI)  
+
+---
+
+## 🚀 How to Run  
+
+### Backend (Spring Boot)  
+```bash
+cd Backend
+mvn clean install
+mvn spring-boot:run
+```
+Runs at: `http://localhost:8080`
+
+### Frontend (React)  
+```bash
+cd Frontend
+npm install
+npm run dev
+```
+Runs at: `http://localhost:5173`
+
+---
+
+## 📧 Email Configuration  
+Configure `application.yml` or `application.properties`:
+
+```yaml
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your-email@gmail.com
+    password: your-app-password
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+```
+
+> 🔑 Use an **App Password** when using Gmail.  
+> 🛠 For local development, **Mailhog** is recommended.  
+
+---
+
+## 🔍 API Endpoints  
+
+### Send Notification Now  
+`POST /api/notifications/send`  
+```json
+{
+  "recipient": "student@uni.lk",
+  "subject": "Voting Reminder",
+  "body": "Don’t forget to cast your vote today!"
+}
+```
+
+### Schedule Notification  
+`POST /api/notifications/schedule`  
+```json
+{
+  "recipient": "student@uni.lk",
+  "subject": "Voting Closing Soon",
+  "body": "Voting will close at 6 PM today.",
+  "sendAt": "2025-09-21T15:30:00"
+}
+```
+
+### Fetch Notifications  
+`GET /api/notifications`
+
+---
+
+## 👨‍💻 Contribution & Responsibilities  
+This module was fully developed and maintained by **Liyanage J. L. K. L. (IT24101927)**.  
+
+**My contributions include:**  
+- Designing the **Notification & Email Reminder System** use case and activity flows.  
+- Implementing **backend APIs** (`NotificationController`, `NotificationService`, `NotificationRepository`).  
+- Creating the **Notification entity** with scheduling and logging support.  
+- Integrating with **Spring Boot email service (SMTP)**.  
+- Developing the **React-based Notification Page** for composing, sending, and scheduling notifications.  
+- Testing with **H2 Database** and configuring Gmail/Mailhog integration.  
+- Ensuring error handling, validation, and logging of communication events.  
+
+---
+
+## ✅ Current Status  
+- Fully functional: supports **send now** and **schedule**.  
+- Integrated with the voting system.  
+- Tested with Gmail SMTP and H2 DB.  
+- Ready for final demonstration.  
+
+---
