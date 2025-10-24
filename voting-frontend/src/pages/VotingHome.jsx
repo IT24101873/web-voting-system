@@ -197,6 +197,7 @@ export default function VotingHome() {
         </div>
       </div>
 
+      {/* Main Content */}
       <main className="vote-home__main">
         {/* HERO */}
         <section className="vote-home__hero">

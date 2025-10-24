@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { getEventBundle, castVote, getMyVotes } from "../api";
-// import VoteHeader from "../components/VoteHeader.jsx"; // removed per request
 import "./EventVote.css";
 
 /* --- Inline SVG icons --- */
@@ -33,6 +32,16 @@ const IconStar = (props) => (
 const IconTarget = (props) => (
   <svg viewBox="0 0 24 24" width="16" height="16" {...props}>
     <path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm0-14c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"/>
+  </svg>
+);
+const IconEdit = (props) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" {...props}>
+    <path fill="currentColor" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.9959.9959 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+  </svg>
+);
+const IconClose = (props) => (
+  <svg viewBox="0 0 24 24" width="16" height="16" {...props}>
+    <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
   </svg>
 );
 
@@ -76,7 +85,7 @@ export default function EventVote() {
   const loc = useLocation();
   const navigate = useNavigate();
 
-  // Feature toggles (unchanged)
+  // Feature toggles
   const REVIEW_MODE = import.meta.env.VITE_REVIEW_BEFORE_SUBMIT === "1";
   const ALLOW_EDIT = new URLSearchParams(loc.search).get("edit") === "1";
 
@@ -90,7 +99,7 @@ export default function EventVote() {
   const [showReview, setShowReview] = useState(false);
   const [submittedOnce, setSubmittedOnce] = useState(false);
 
-  // tiny toast (unchanged except 3s default + auto-dismiss effect)
+  // Toast state
   const [toast, setToast] = useState(null);
   const showToast = (message, kind = "info", timeout = 3000) => {
     setToast({ message, kind });
@@ -103,7 +112,7 @@ export default function EventVote() {
     return () => clearTimeout(id);
   }, [toast]);
 
-  // ---- updated logout: clear storage and redirect to PUBLIC_HOME with ?toast=logout
+  // Logout function
   const logoutHere = useCallback(() => {
     ["auth","student_auth","admin_auth","token","accessToken","refreshToken","nominee_auth","user","role"]
       .forEach((k) => { localStorage.removeItem(k); sessionStorage.removeItem(k); });
@@ -120,7 +129,37 @@ export default function EventVote() {
     window.location.replace(dest.toString());
   }, []);
 
-  // Load event bundle (unchanged)
+  // Cancel edit mode and go back with toast
+  const cancelEdit = useCallback(() => {
+    try {
+      sessionStorage.setItem(
+        "nav_toast",
+        JSON.stringify({ 
+          ts: Date.now(), 
+          kind: "info", 
+          message: "Canceled edit" 
+        })
+      );
+    } catch { /* empty */ }
+    navigate(-1); // Go back to previous page
+  }, [navigate]);
+
+  // Navigate back to MyVote with success toast
+  const navigateToMyVoteWithToast = useCallback((message) => {
+    try {
+      sessionStorage.setItem(
+        "nav_toast",
+        JSON.stringify({ 
+          ts: Date.now(), 
+          kind: "success", 
+          message: message
+        })
+      );
+    } catch { /* empty */ }
+    navigate("/my-vote");
+  }, [navigate]);
+
+  // Load event bundle
   useEffect(() => {
     let ok = true;
     (async () => {
@@ -136,7 +175,7 @@ export default function EventVote() {
     return () => { ok = false; };
   }, [eventId]);
 
-  // Load my votes for this event (unchanged)
+  // Load my votes for this event
   useEffect(() => {
     let ok = true;
     (async () => {
@@ -160,7 +199,7 @@ export default function EventVote() {
           setVoted(map);
           if (REVIEW_MODE && Object.keys(map).length > 0) setSubmittedOnce(true);
         }
-      } catch {}
+      } catch { /* empty */ }
     })();
     return () => { ok = false; };
   }, [eventId, REVIEW_MODE]);
@@ -207,7 +246,7 @@ export default function EventVote() {
   };
   const statusInfo = getStatusInfo(status.label);
 
-  // actions (unchanged)
+  // actions
   const handleVote = async (categoryId, nominee) => {
     if (REVIEW_MODE) {
       setDraft(d => ({ ...d, [categoryId]: nominee.id }));
@@ -220,7 +259,13 @@ export default function EventVote() {
       setVoted(v => ({ ...v, [categoryId]: nominee.id }));
       setSubmittedOnce(true);
       localStorage.setItem("votes_dirty", String(Date.now()));
-      showToast("Vote recorded.", "success");
+      
+      // Show different toast message for edit mode vs new votes
+      if (ALLOW_EDIT) {
+        showToast("Selection updated successfully", "success");
+      } else {
+        showToast("Vote recorded.", "success");
+      }
     } catch (e) {
       showToast(e?.response?.data?.message || e.message || "Failed to cast vote", "error", 3600);
     } finally {
@@ -242,8 +287,13 @@ export default function EventVote() {
       setDraft({});
       setSubmittedOnce(true);
       localStorage.setItem("votes_dirty", String(Date.now()));
-      showToast("Your selections have been submitted.", "success");
-      navigate("/my-vote");
+      
+      // Show different toast message for edit mode and navigate with toast
+      if (ALLOW_EDIT) {
+        navigateToMyVoteWithToast("Selections updated successfully");
+      } else {
+        navigateToMyVoteWithToast("Your selections have been submitted.");
+      }
     } catch (e) {
       showToast(e?.response?.data?.message || e.message || "Failed to submit votes", "error", 3600);
     }
@@ -263,13 +313,9 @@ export default function EventVote() {
   );
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "linear-gradient(135deg, #2aa3f4 0%, #a0d5ff 35%, #b2e0c4 100%)"
-    }}>
-      {/* === VotingHome-like Top Bar (classed) === */}
+    <div className="public-event">
+      {/* Header with edit mode controls */}
       <header className="vh__topbar">
-        <div className="vh__glow" />
         <div className="vh__topbar-inner">
           <Link to="/" className="vh__brand">
             <div className="vh__logo">🗳️</div>
@@ -278,10 +324,52 @@ export default function EventVote() {
           </Link>
 
           <div className="vh__actions">
+            {ALLOW_EDIT && (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span style={{ 
+                  fontSize: '0.8rem', 
+                  fontWeight: 600, 
+                  color: '#ef4444',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  padding: '4px 8px',
+                  borderRadius: '6px'
+                }}>
+                  Edit Mode
+                </span>
+                <button 
+                  type="button" 
+                  onClick={cancelEdit}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 16px',
+                    background: 'rgba(107, 114, 128, 0.1)',
+                    color: '#6b7280',
+                    border: '1px solid rgba(107, 114, 128, 0.2)',
+                    borderRadius: '8px',
+                    fontWeight: 600,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(107, 114, 128, 0.2)';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(107, 114, 128, 0.1)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <IconClose />
+                  Cancel
+                </button>
+              </div>
+            )}
             <Link to="/my-vote" className="vh__btn vh__btn-green">
               <span className="vh__btn-ico">📊</span> My Vote
             </Link>
-            {/* updated: button triggers logout with toast */}
             <button type="button" onClick={logoutHere} className="vh__btn vh__btn-red">
               <span className="vh__btn-ico">🚪</span> Logout
             </button>
@@ -289,7 +377,32 @@ export default function EventVote() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 1200, margin: "0 auto", padding: "30px 20px", display: "grid", gap: 24 }}>
+      <main className="public-event__main">
+        {/* Edit mode banner */}
+        {ALLOW_EDIT && (
+          <div style={{
+            background: 'linear-gradient(135deg, #fef3c7, #fde68a)',
+            border: '1px solid #f59e0b',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            marginBottom: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            boxShadow: '0 4px 12px rgba(245, 158, 11, 0.15)'
+          }}>
+            <IconEdit style={{ color: '#d97706', flexShrink: 0 }} />
+            <div style={{ flex: 1 }}>
+              <strong style={{ color: '#92400e', fontSize: '0.95rem' }}>
+                Edit Mode Active
+              </strong>
+              <p style={{ margin: '4px 0 0 0', color: '#92400e', fontSize: '0.85rem', opacity: 0.9 }}>
+                You can change your previous votes. Click "Cancel" to exit edit mode.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Review toolbar */}
         {REVIEW_MODE && (
           <div className="review-toolbar">
@@ -319,127 +432,88 @@ export default function EventVote() {
           </div>
         )}
 
-        {/* Back */}
-        <Link
-          to="/voting"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "10px 18px",
-            background: "rgba(255, 255, 255, 0.9)",
-            color: "#0f172a",
-            borderRadius: 12,
-            fontWeight: 600,
-            fontSize: 14,
-            textDecoration: "none",
-            boxShadow: "0 4px 12px rgba(0,0,0,.1)",
-            transition: "all .2s ease",
-            width: "fit-content",
-            border: "1px solid rgba(255,255,255,.5)"
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateX(-4px)";
-            e.currentTarget.style.boxShadow = "0 6px 16px rgba(0,0,0,.15)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateX(0)";
-            e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,.1)";
-          }}
-        >
-          <IconArrowLeft />
-          Back to Events
-        </Link>
+        {/* Navigation */}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <Link to="/voting" className="public-event__back-link">
+            <IconArrowLeft />
+            Back to Events
+          </Link>
+        </div>
 
         {/* Loading / error / not found */}
         {loading && (
-          <div style={{
-            background: "#fff", padding: 32, borderRadius: 16,
-            boxShadow: "0 12px 28px rgba(0,0,0,.12)", textAlign: "center"
-          }}>
-            <p style={{ margin: 0, color: "#0f172a" }}>Loading event details…</p>
+          <div className="public-event__loading">
+            <div className="public-event__spinner"></div>
+            <h3>Loading Event</h3>
+            <p>Please wait while we load the event details...</p>
           </div>
         )}
         {!loading && err && (
-          <div style={{
-            background: "#fff", padding: 32, borderRadius: 16,
-            boxShadow: "0 12px 28px rgba(0,0,0,.12)", textAlign: "center"
-          }}>
-            <p style={{ color: "#ef4444", fontSize: 16 }}>{err}</p>
+          <div className="public-event__error">
+            <h3>Error Loading Event</h3>
+            <p>{err}</p>
           </div>
         )}
         {!loading && !err && !event && (
-          <div style={{
-            background: "#fff", padding: 32, borderRadius: 16,
-            boxShadow: "0 12px 28px rgba(0,0,0,.12)", textAlign: "center"
-          }}>
-            <p style={{ color: "#0f172a" }}>Event not found.</p>
+          <div className="public-event__not-found">
+            <h3>Event Not Found</h3>
+            <p>The event you're looking for doesn't exist or you don't have access to it.</p>
           </div>
         )}
 
-        {/* Header card + stats */}
+        {/* Event Header */}
         {event && (
-          <header style={{
-            background: "#ffffff",
-            borderRadius: 16,
-            padding: 32,
-            boxShadow: "0 12px 28px rgba(0,0,0,.12)"
-          }}>
-            <div style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              flexWrap: "wrap",
-              gap: 16,
-              marginBottom: 16
-            }}>
+          <div className="event-header">
+            <div className="event-header__top">
               <div>
-                <h1 style={{
-                  margin: "0 0 8px 0",
-                  fontSize: 32,
-                  fontWeight: 800,
-                  color: "#0f172a",
-                  lineHeight: 1.2
-                }}>
-                  {event.name}
-                </h1>
+                <h1 className="event-header__title">{event.name}</h1>
                 {event.description && (
-                  <p style={{ margin: 0, color: "#64748b", fontSize: 16, lineHeight: 1.5 }}>
-                    {event.description}
-                  </p>
+                  <p className="event-header__description">{event.description}</p>
                 )}
               </div>
-              <div style={{
-                ...statusInfo,
-                padding: "8px 16px",
-                borderRadius: 12,
-                fontSize: 14,
-                fontWeight: 600,
-                whiteSpace: "nowrap"
-              }}>
+              <div 
+                className="event-header__status"
+                style={{ 
+                  background: statusInfo.background,
+                  color: statusInfo.color
+                }}
+              >
                 {statusInfo.text}
               </div>
             </div>
 
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: 16,
-              marginTop: 24,
-              paddingTop: 24,
-              borderTop: "1px solid #e2e8f0"
-            }}>
-              <StatTile gradient="linear-gradient(135deg, #3b82f6, #2563eb)" icon={<IconCalendar />} label="Duration" value={periodText} />
-              <StatTile gradient="linear-gradient(135deg, #8b5cf6, #7c3aed)" icon={<IconTrophy />} label="Categories" value={`${categories.length} Award Categories`} />
-              <StatTile gradient="linear-gradient(135deg, #10b981, #059669)" icon={<IconUser />} label="Nominees" value={`${totalNominees} Total Nominees`} />
-              <StatTile gradient="linear-gradient(135deg, #f59e0b, #d97706)" icon={<IconStar />} label={REVIEW_MODE ? "Submitted" : "Status"} value={REVIEW_MODE ? `${submittedCount}/${categories.length}` : status.label} />
+            <div className="event-header__stats">
+              <StatTile 
+                gradient="linear-gradient(135deg, #3b82f6, #2563eb)" 
+                icon={<IconCalendar />} 
+                label="Duration" 
+                value={periodText} 
+              />
+              <StatTile 
+                gradient="linear-gradient(135deg, #8b5cf6, #7c3aed)" 
+                icon={<IconTrophy />} 
+                label="Categories" 
+                value={`${categories.length} Award Categories`} 
+              />
+              <StatTile 
+                gradient="linear-gradient(135deg, #10b981, #059669)" 
+                icon={<IconUser />} 
+                label="Nominees" 
+                value={`${totalNominees} Total Nominees`} 
+              />
+              <StatTile 
+                gradient="linear-gradient(135deg, #f59e0b, #d97706)" 
+                icon={<IconStar />} 
+                label={REVIEW_MODE ? "Submitted" : "Status"} 
+                value={REVIEW_MODE ? `${submittedCount}/${categories.length}` : status.label} 
+              />
             </div>
-          </header>
+          </div>
         )}
 
-        {/* Categories + nominees */}
+        {/* Categories + Nominees */}
         {event && (
-          <section style={{ display: "grid", gap: 24 }}>
+          <section className="categories-section">
             {categories.length === 0 ? (
               <div className="public-event__empty">
                 <h3>No Categories Yet</h3>
@@ -449,44 +523,27 @@ export default function EventVote() {
               categories.map((cat) => {
                 const list = nomsByCat.get(cat.id) || [];
                 return (
-                  <article
-                    key={cat.id}
-                    style={{
-                      background: "#ffffff",
-                      borderRadius: 16,
-                      padding: 28,
-                      boxShadow: "0 12px 28px rgba(0,0,0,.12)"
-                    }}
-                  >
-                    {/* category header */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-                      <span style={{ fontSize: 32 }}>🎯</span>
+                  <article key={cat.id} className="category-card">
+                    <div className="category-card__header">
+                      <span style={{ fontSize: '32px' }}>🎯</span>
                       <div style={{ flex: 1 }}>
-                        <h2 style={{ margin: "0 0 4px 0", fontSize: 22, fontWeight: 700, color: "#0f172a" }}>{cat.name}</h2>
+                        <h2 className="category-card__title">{cat.name}</h2>
                         {cat.description && (
-                          <p style={{ margin: 0, color: "#64748b", fontSize: 14 }}>{cat.description}</p>
+                          <p className="category-card__description">{cat.description}</p>
                         )}
                       </div>
-                      <div style={{
-                        display: "flex", alignItems: "center", gap: 6,
-                        padding: "6px 12px", background: "#f1f5f9",
-                        borderRadius: 8, fontSize: 14, fontWeight: 600, color: "#475569"
-                      }}>
+                      <div className="category-card__count">
                         <IconTarget />
                         {list.length} Nominee{list.length !== 1 ? "s" : ""}
                       </div>
                     </div>
 
-                    {/* nominees grid */}
                     {list.length === 0 ? (
-                      <div style={{ paddingTop: 8, color: "#64748b" }}>No nominees yet.</div>
+                      <div style={{ paddingTop: '8px', color: '#64748b' }}>
+                        No nominees yet.
+                      </div>
                     ) : (
-                      <div style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                        gap: 16,
-                        marginTop: 20
-                      }}>
+                      <div className="nominees-grid">
                         {list.map((n) => {
                           const selected = postSubmitLocked
                             ? voted[cat.id] === n.id
@@ -497,107 +554,77 @@ export default function EventVote() {
 
                           const isBusy = !!busy[n.id];
 
-                          const baseTile = {
-                            padding: 20,
-                            background: selected ? "#ffffff" : "#f8fafc",
-                            borderRadius: 12,
-                            border: `2px solid ${selected ? "#3b82f6" : "#e2e8f0"}`,
-                            transition: "all .2s ease",
-                            cursor: (!status.active || postSubmitLocked || categoryLockedOther || isBusy) ? "not-allowed" : "pointer",
-                            boxShadow: selected ? "0 8px 16px rgba(0,0,0,.1)" : "none"
-                          };
-
-                          const photoSrc = resolveNomineePhoto(n);
-
                           return (
                             <div
                               key={n.id}
-                              style={baseTile}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = "#3b82f6";
-                                e.currentTarget.style.background = "#ffffff";
-                                e.currentTarget.style.transform = "translateY(-2px)";
-                                e.currentTarget.style.boxShadow = "0 8px 16px rgba(0,0,0,.1)";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = selected ? "#3b82f6" : "#e2e8f0";
-                                e.currentTarget.style.background = selected ? "#ffffff" : "#f8fafc";
-                                e.currentTarget.style.transform = "translateY(0)";
-                                e.currentTarget.style.boxShadow = selected ? "0 8px 16px rgba(0,0,0,.1)" : "none";
-                              }}
+                              className={`nominee-card ${selected ? 'nominee-card--selected' : ''}`}
                             >
-                              {/* BIG rounded image ABOVE name */}
-                              <div style={{ marginBottom: 12 }}>
-                                <div
-                                  style={{
-                                    position: "relative",
-                                    width: "100%",
-                                    height: 170,
-                                    borderRadius: 14,
-                                    overflow: "hidden",
-                                    border: "2px solid #3b82f6",
-                                    background: "linear-gradient(180deg,#eaf3ff,#f8fbff)",
-                                    boxShadow: "0 6px 20px rgba(59,130,246,.15)"
-                                  }}
-                                >
-                                  {photoSrc ? (
+                              <div className="nominee-card__image-container">
+                                {(() => {
+                                  const photoSrc = resolveNomineePhoto(n);
+                                  return photoSrc ? (
                                     <img
                                       src={photoSrc}
                                       alt={n.name}
-                                      style={{
-                                        position: "absolute",
-                                        inset: 0,
-                                        width: "100%",
-                                        height: "100%",
-                                        objectFit: "cover",
-                                        display: "block"
+                                      className="nominee-card__image"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        const placeholder = e.currentTarget.parentElement.querySelector('.nominee-no-photo');
+                                        if (placeholder) placeholder.style.display = 'flex';
                                       }}
-                                      onError={(e) => (e.currentTarget.style.display = "none")}
                                     />
-                                  ) : (
-                                    <div style={{
-                                      position: "absolute", inset: 0,
-                                      display: "grid", placeItems: "center",
-                                      color: "#64748b"
-                                    }}>
-                                      <IconUser />
-                                    </div>
-                                  )}
+                                  ) : null;
+                                })()}
+                                <div className="nominee-no-photo">
+                                  <div style={{ 
+                                    width: '48px', 
+                                    height: '48px', 
+                                    marginBottom: '8px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}>
+                                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none">
+                                      <path
+                                        d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2v11Z"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                      <circle
+                                        cx="12"
+                                        cy="13"
+                                        r="4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                      />
+                                    </svg>
+                                  </div>
+                                  <span>No Photo</span>
                                 </div>
                               </div>
 
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#0f172a" }}>{n.name}</h3>
+                              <div className="nominee-card__header">
+                                <h3 className="nominee-card__name">{n.name}</h3>
                                 {selected && (
-                                  <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#10b981", fontSize: 14, fontWeight: 700 }}>
+                                  <div className="nominee-card__selected">
                                     ✓ Selected
                                   </div>
                                 )}
                               </div>
 
                               {(n.description || n.bio || n.additionalInfo) && (
-                                <p style={{ margin: "0 0 16px 0", color: "#64748b", fontSize: 14, lineHeight: 1.5 }}>
+                                <p className="nominee-card__description">
                                   {n.description || n.bio || n.additionalInfo}
                                 </p>
                               )}
 
                               <button
-                                style={{
-                                  width: "100%",
-                                  padding: 10,
-                                  border: "none",
-                                  borderRadius: 8,
-                                  background: selected
-                                    ? "linear-gradient(180deg,#059669,#10b981)"
-                                    : "linear-gradient(180deg,#3aa0ea,#2f89d9)",
-                                  color: "#fff",
-                                  fontWeight: 700,
-                                  fontSize: 14,
-                                  cursor: (!status.active || postSubmitLocked || (!!voted[cat.id] && !ALLOW_EDIT && !REVIEW_MODE) || categoryLockedOther || isBusy) ? "not-allowed" : "pointer",
-                                  opacity: (!status.active || postSubmitLocked || categoryLockedOther || isBusy) ? 0.7 : 1,
-                                  transition: "all .2s ease",
-                                  boxShadow: selected ? "0 4px 12px rgba(5,150,105,.35)" : "none"
-                                }}
+                                className={`nominee-card__button ${
+                                  selected ? 'nominee-card__button--voted' : 'nominee-card__button--vote'
+                                }`}
                                 disabled={
                                   !status.active ||
                                   postSubmitLocked ||
@@ -606,15 +633,6 @@ export default function EventVote() {
                                   categoryLockedOther ||
                                   isBusy
                                 }
-                                onMouseEnter={(e) => {
-                                  if (e.currentTarget.disabled) return;
-                                  e.currentTarget.style.transform = "scale(1.02)";
-                                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(59,130,246,.3)";
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.transform = "scale(1)";
-                                  e.currentTarget.style.boxShadow = selected ? "0 4px 12px rgba(5,150,105,.35)" : "none";
-                                }}
                                 onClick={() => handleVote(cat.id, n)}
                                 title={categoryLockedOther ? "You already selected someone in this category. Clear to change." : undefined}
                               >
@@ -654,7 +672,6 @@ export default function EventVote() {
           <ReviewModal
             onClose={() => setShowReview(false)}
             onSubmit={submitAll}
-            event={event}
             categories={categories}
             nomsByCat={nomsByCat}
             draft={draft}
@@ -670,13 +687,13 @@ export default function EventVote() {
 /* --- Small stat card --- */
 function StatTile({ gradient, icon, label, value }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: 16, background: "#f8fafc", borderRadius: 12 }}>
-      <div style={{ width: 40, height: 40, borderRadius: 10, background: gradient, display: "grid", placeItems: "center", color: "#fff" }}>
+    <div className="stat-tile">
+      <div className="stat-tile__icon" style={{ background: gradient }}>
         {icon}
       </div>
-      <div>
-        <div style={{ fontSize: 13, color: "#64748b", marginBottom: 2 }}>{label}</div>
-        <div style={{ fontSize: 15, fontWeight: 600, color: "#0f172a" }}>{value}</div>
+      <div className="stat-tile__content">
+        <div className="stat-tile__label">{label}</div>
+        <div className="stat-tile__value">{value}</div>
       </div>
     </div>
   );
@@ -700,11 +717,12 @@ function dateRange(sAt, eAt) {
 }
 
 /* --- Review modal & Toast --- */
-function ReviewModal({ onClose, onSubmit, event, categories, nomsByCat, draft }) {
+function ReviewModal({ onClose, onSubmit, categories, nomsByCat, draft }) {
   const byId = new Map();
   for (const [, list] of nomsByCat.entries()) {
     for (const n of list) byId.set(n.id, n);
   }
+
   const selected = Object.entries(draft).map(([catId, nomId]) => ({
     category: categories.find(c => c.id === Number(catId)),
     nominee: byId.get(nomId)
@@ -721,7 +739,7 @@ function ReviewModal({ onClose, onSubmit, event, categories, nomsByCat, draft })
         <div className="review-modal__body">
           <div className="review-modal__section">
             <h4>Selected ({selected.length})</h4>
-            {selected.length === 0 ? <p className="muted">No selections yet.</p> : (
+            {selected.length === 0 ? <p style={{ color: '#64748b', fontStyle: 'italic' }}>No selections yet.</p> : (
               <ul className="review-modal__list">
                 {selected.map((row, i) => (
                   <li key={i}>
@@ -735,8 +753,8 @@ function ReviewModal({ onClose, onSubmit, event, categories, nomsByCat, draft })
           </div>
           <div className="review-modal__section">
             <h4>Skipped ({skipped.length})</h4>
-            {skipped.length === 0 ? <p className="muted">No skipped categories.</p> : (
-              <ul className="review-modal__list muted">
+            {skipped.length === 0 ? <p style={{ color: '#64748b', fontStyle: 'italic' }}>No skipped categories.</p> : (
+              <ul className="review-modal__list" style={{ color: '#64748b' }}>
                 {skipped.map(c => <li key={c.id}>{c.name}</li>)}
               </ul>
             )}
@@ -752,6 +770,7 @@ function ReviewModal({ onClose, onSubmit, event, categories, nomsByCat, draft })
     </div>
   );
 }
+
 function Toast({ message, kind = "info", onClose }) {
   if (!message) return null;
   const cls =
