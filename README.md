@@ -1,7 +1,7 @@
 # Notification & Email Reminder System
 
 ## 👤 Author  
-**Name:** Liyanage J. L. K. L. *(Branch owner)* 
+**Name:** Liyanage J. L. K. L. *(Branch owner)*
 **IT Number:** IT24101927
 **Module:** Notification & Email Reminder System 
 
