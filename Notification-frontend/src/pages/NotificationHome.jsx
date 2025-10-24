@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
+// src/pages/NotificationHome.jsx
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Bell, Send, History, Archive as ArchiveIcon,
