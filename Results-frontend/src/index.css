@@ -1,0 +1,14 @@
+body { margin:0; font-family: Inter, system-ui, Arial, sans-serif; background:#0b1220; color:#e7ecf3; }
+.app { min-height:100vh; }
+.header { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; background:#0f172a; border-bottom:1px solid #1f2a44; }
+.brand { font-weight:700; }
+.nav-link { color:#a5b4fc; margin-right:16px; text-decoration:none; }
+.nav-link.active { color:#fff; }
+.main { padding:24px; }
+.page h1 { margin-top:0; }
+.card { background:#0f172a; border:1px solid #1f2a44; border-radius:12px; padding:16px; margin-bottom:16px; }
+.row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+.table { width:100%; border-collapse:collapse; }
+.table th,.table td { border-bottom:1px solid #1f2a44; padding:8px 6px; }
+input, select, button, a.button { padding:8px 10px; border-radius:8px; border:1px solid #1f2a44; background:#0b1220; color:#e7ecf3; }
+button { cursor:pointer; }
