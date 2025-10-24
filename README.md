@@ -5,6 +5,10 @@
 **IT Number:** IT24101927
 **Module:** Notification & Email Reminder System 
 
+**Name:** Jesmeen M. B. A. *(Branch owner)*  
+**IT Number:** IT24101873  
+**Module:** Full-stack Repo – Web-based Voting System for Award Nominations
+
 > Branch: **Branch-Kavisha** · Group: **2025-Y2-S1-MLB-B8G1-02**
 
 ---
