@@ -1,10 +1,11 @@
 # Notification & Email Reminder System
 
 ## 👤 Author  
-**Name:** Liyanage J. L. K. L. (Branch owner) 
+**Name:** Liyanage J. L. K. L. *(Branch owner)* 
 **IT Number:** IT24101927
-**Module:** Notification & Email Reminder System (Branch-Kavisha)  
-**Repository:** Web-based Voting System – Group 2025-Y2-S1-MLB-B8G1-02
+**Module:** Notification & Email Reminder System 
+
+> Branch: **Branch-Kavisha** · Group: **2025-Y2-S1-MLB-B8G1-02**
 
 ---
 
