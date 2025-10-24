@@ -5,6 +5,7 @@ import com.example.votingsystem.dashboard.dto.SimpleSlice;
 import com.example.votingsystem.dashboard.service.DashboardService;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.RecordComponent;
@@ -18,6 +19,7 @@ import java.util.Objects;
 @RestController
 @RequestMapping("/api/dashboard/exports")
 @PreAuthorize("hasRole('ADMIN')")
+@Component("dashboardExportController")
 public class ExportController {
 
     private final DashboardService dash;
