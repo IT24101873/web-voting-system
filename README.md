@@ -1,281 +1,158 @@
-# Web‑based Voting System for Award Nominations
-_Group: 2025‑Y2‑S1‑MLB‑B8G1‑02_
+# Web-based Voting System for Award Nominations
+**Group:** 2025-Y2-S1-MLB-B8G1-02
 
-A full‑stack application for managing university award events, nominees, and secure student voting with real‑time progress and final results.
+## 🚀 Overview
+A secure, web-based e-voting platform for campus award nominations. Final-year students vote once per category, admins manage events/categories/nominees, and organizers publish results with transparent reports and dashboards.
 
----
+## 🎯 Core Goals
+- Online voting with **one vote per category per student**
+- Admin tools to **create categories**, **manage nominees**, **monitor progress**
+- **Results generation** with exports and public publishing
+- **Access control** with password management and reset flows
 
-## ✨ Features
+## 👥 Stakeholders / Users
+- Final-Year Students (Voters)
+- Admin Staff
+- Event Organizers / Supervisors
+- IT Support
+- Public viewers (nominees & winners only)
 
-- **Authentication & Access Control**: Login, logout, password reset; roles: `ADMIN`, `EVENT_ORGANIZER`, `STUDENT`.
-- **Award Categories & Nominee Management**: CRUD for categories and nominees; duplicate and integrity validation.
-- **Voting Management**: One vote per category per eligible student; review screen; final submit locks ballot.
-- **Progress Dashboard**: Live KPIs and category‑wise progress for admins/organizers.
-- **Results & Reports**: Winner computation, PDF/CSV export, publish winners page.
-- **Notifications**: Compose & schedule email reminders (start day, mid‑window, last‑day).
+## 🧩 Major Modules (RACI by owner)
+- **Voting Management** – IT24101873 (Jesmeen M.B.A)
+- **Award Categories & Nominee Management** – IT24101829 (Ranasinghe R.P.V.K.)
+- **Notification & Email Reminder System** – IT24101927 (Liyanage J.L.K.L.)
+- **Voting Progress Dashboard** – IT24103815 (Fernando W.P.S.)
+- **Results & Report Management** – IT24101972 (Nethsara K.P.S.)
+- **Access Control & Password Management** – IT24101952 (Senevirathna U.K.J.)
 
----
+## ✅ Key Features
+- Secure login (students/admins), role-based access, password reset
+- Admin CRUD for categories & nominees (with validation)
+- One-vote-per-category enforcement, review before submit
+- Live dashboard (category/nominee progress, KPIs)
+- Result computation, tie handling, CSV/PDF exports, public results page
+- Email reminders (before close) and result notifications
 
-## 🏗 Tech Stack
-
-**Backend**: Java 17 · Spring Boot 3 · Spring Web · Spring Data JPA (Hibernate) · Validation · Security · Mail · H2 (dev) / MySQL (prod) · Maven  
-**Frontend**: React + Vite · (TypeScript optional) · Fetch/Axios · Tailwind (optional)  
-**Dev Tools**: Node 18+ · npm · Git · IntelliJ IDEA/VS Code · Postman
-
----
-
-## 📁 Repository Structure
-
+## 🏗️ Architecture (Typical Monorepo)
 ```
-/voting-system/
-  backend/
-    src/main/java/com/example/votingsystem/...
-    src/main/resources/
-      application.yml
-      data.sql                 # optional dev seed
-    pom.xml
-  voting-frontend/
-    src/
-    index.html
-    package.json
-README.md
+/voting-backend/         # Spring Boot (Java 17, Maven, H2 for dev/test)
+/voting-frontend/        # React (Vite) SPA
 ```
+**Tech stack:** Java 17, Spring Boot, Spring Data JPA, H2 (dev), MySQL (prod-ready), React (Vite), JavaMail (or provider API), BCrypt.
 
-> If your folders differ, update paths accordingly.
+## 🗃️ Data Model (high-level)
+- **User**(id, itNumber/email, role[STUDENT, ADMIN, ORGANIZER], passwordHash, status)
+- **Event**(id, name, startAt, endAt, status)
+- **Category**(id, eventId, name, status)
+- **Nominee**(id, categoryId, name, bio, photoUrl, status)
+- **Vote**(id, voterId, categoryId, nomineeId, createdAt) — unique(voterId, categoryId)
+- **Notification**(id, subject, body, scheduledFor, status, archived)  
+*(Enforces one vote per student per category; use soft delete where needed.)*
 
----
+## 🔐 Security
+- BCrypt password hashing
+- Role-based authorization (Student/Admin/Organizer)
+- Session management and account lockout on repeated failures
+- Password reset via email token
 
-## ⚙️ Backend Setup (Spring Boot)
+## 📈 Non-Functional Requirements
+- Mobile-friendly, accessible UI
+- Target ≤2s response for typical actions; scale to hundreds of concurrent voters
+- 99% uptime during voting windows; regular backups
+- HTTPS in deployment; audit logs for admin actions
 
-### 1) Prerequisites
+## ⚙️ Getting Started
+
+### Prerequisites
 - Java 17, Maven 3.9+
-- Optional: MySQL 8.x (for production use)
+- Node.js 18+ and npm (or pnpm/yarn)
+- IDEs: IntelliJ IDEA (backend), VS Code/WebStorm (frontend)
 
-### 2) Configuration — H2 (Dev)
-Create/confirm `backend/src/main/resources/application.yml`:
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:h2:mem:votingdb;DB_CLOSE_DELAY=-1;MODE=MySQL
-    driverClassName: org.h2.Driver
-    username: sa
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate.format_sql: true
-  h2:
-    console:
-      enabled: true
-      path: /h2
-server:
-  port: 8080
-
-app:
-  voting:
-    allowSkipCategories: true
-    lockOnSubmit: true
-```
-
-### 3) Configuration — MySQL (Prod)
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/votingdb?useSSL=false&serverTimezone=UTC
-    username: root
-    password: <your-password>
-  jpa:
-    hibernate:
-      ddl-auto: update
-```
-
-### 4) (Optional) Email (Gmail SMTP)
-```yaml
-spring:
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: your-email@gmail.com
-    password: <app-password>
-    properties:
-      mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
-```
-
-### 5) Build & Run
+### 1) Backend (Spring Boot + H2)
 ```bash
-cd backend
-mvn clean spring-boot:run
-# -> http://localhost:8080
+cd voting-backend
+cp src/main/resources/application.example.properties src/main/resources/application.properties
+# Edit DB/email if needed (defaults use H2)
+mvn spring-boot:run
 ```
 
----
+**Default dev config (H2):**
+```properties
+spring.datasource.url=jdbc:h2:mem:votingdb;DB_CLOSE_DELAY=-1;MODE=MySQL
+spring.datasource.username=sa
+spring.jpa.hibernate.ddl-auto=update
+spring.h2.console.enabled=true
 
-## 🖥 Frontend Setup (Vite + React)
+# Mail (optional for dev)
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=your_app_email
+spring.mail.password=your_app_password_or_app_password
+spring.mail.properties.mail.smtp.starttls.enable=true
+```
 
-### 1) Create/Install
+### 2) Frontend (React + Vite)
 ```bash
-# from repo root (if not created yet)
-npm create vite@latest voting-frontend -- --template react
-cd voting-frontend
+cd ../voting-frontend
+npm create vite@latest . -- --template react
 npm install
-```
-
-### 2) Environment
-Create `.env` inside `voting-frontend/`:
-```
-VITE_API_BASE=http://localhost:8080/api
-```
-
-### 3) Start Dev Server
-```bash
 npm run dev
-# -> http://localhost:5173
 ```
+Set backend API base URL in an env (e.g., `VITE_API_BASE=http://localhost:8080/api`).
 
-### 4) Minimal API Helper (`src/lib/api.ts`)
-```ts
-export const api = (path: string, init?: RequestInit) =>
-  fetch(\`\${import.meta.env.VITE_API_BASE}\${path}\`, {
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    ...init,
-  });
-```
+### 3) Login & Roles (seed)
+- Create an **ADMIN** account first (via DB insert or signup + role patch).
+- Add **categories/nominees**, then test **student** voting flow.
 
----
+## 🧪 Sample API (illustrative)
+- `POST /api/auth/login` – authenticate user
+- `GET /api/categories` – list categories (+ nominees)
+- `POST /api/votes/submit` – submit all category votes (one-shot)
+- `GET /api/dashboard` – admin KPIs & charts
+- `POST /api/results/generate` – compute winners & export
+- `POST /api/notifications/send` – send reminders/results  
+*(Implement with DTOs; enforce `unique(voterId, categoryId)` at DB + service layer.)*
 
-## 🔐 Roles & Access
+## 📤 Reports & Publishing
+- Admin can **generate results**, **review**, **export CSV/PDF**, and **publish** to a public page after voting closes.  
+- Tie rules and freeze flags recommended.
 
-- `ADMIN` – full access to system configs, reports, and dashboards.
-- `EVENT_ORGANIZER` – manage events, categories, nominees, see progress.
-- `STUDENT` – view ballot and submit votes (eligible final‑year students only).
+## 🔔 Notifications
+- Compose reminders; **schedule** (e.g., T-48h, T-24h) or **send now**  
+- Store send logs; add retry/backoff in production.
 
----
+## 📊 Dashboard
+- Live progress (total votes, turnout, per-category counts)
+- Lightweight polling (e.g., 10s) or SSE/WebSocket upgrade later
+- Optional CSV/PDF export of progress snapshots
 
-## 📚 Example Endpoints (REST)
+## 🧭 Project Management (Semester Flow)
+- **Week 3:** Proposal & requirements
+- **Weeks 4–6:** Design (ERD, use cases, UI)
+- **Weeks 7–11:** Implementation (≥75% by Week 10)
+- **Weeks 12–13:** Testing & optimization
+- **Week 14:** Final demo + report submission
 
-```
-# Auth
-POST   /api/auth/login
-POST   /api/auth/logout
-POST   /api/auth/forgot-password
-POST   /api/auth/reset-password
+## 👪 Team & Responsibilities
+- Jesmeen (IT24101873): Voting Management
+- Ranasinghe (IT24101829): Categories & Nominees
+- Liyanage (IT24101927): Notifications
+- Fernando (IT24103815): Dashboard
+- Nethsara (IT24101972): Results & Reports
+- Senevirathna (IT24101952): Access Control & Passwords
 
-# Categories & Nominees
-GET    /api/categories
-POST   /api/categories
-PUT    /api/categories/{id}
-DELETE /api/categories/{id}
+## 🧭 How to Demo
+1. Login as **Admin**, create categories & nominees  
+2. Create a **Student** account and login  
+3. Cast votes (one per category) → submit → confirmation  
+4. As **Admin**, open **Dashboard** (live counts)  
+5. Close voting → **Generate results** → export CSV/PDF → **Publish** public page  
+6. Send **result emails** to voters
 
-GET    /api/categories/{id}/nominees
-POST   /api/categories/{id}/nominees
-PUT    /api/nominees/{id}
-DELETE /api/nominees/{id}
-
-# Voting
-GET    /api/events/{eventId}/ballot
-POST   /api/events/{eventId}/vote           # { categoryId, nomineeId }
-POST   /api/events/{eventId}/submit         # locks the ballot
-
-# Dashboard & Reports
-GET    /api/dashboard/overview
-GET    /api/dashboard/category/{categoryId}
-POST   /api/reports/generate
-GET    /api/reports/{reportId}/download
-```
-
----
-
-## 🧪 Seeding (Dev)
-
-`backend/src/main/resources/data.sql` (example):
-```sql
--- Categories
-insert into categories(id, name) values
-  (1, 'Best Innovator'),
-  (2, 'Best Team Player');
-
--- Nominees
-insert into nominees(id, category_id, full_name) values
-  (101, 1, 'Akeel Nizam'),
-  (102, 1, 'Bimali Perera'),
-  (103, 2, 'Chanuka Silva'),
-  (104, 2, 'Dewmini Jayasuriya');
-
--- Students (eligible)
-insert into students(id, email, full_name, final_year) values
-  (10001, 's10001@uni.test', 'Akeel Nizam', true),
-  (10002, 's10002@uni.test', 'Bimali Perera', true);
-```
-
----
-
-## 🔒 Security Rules
-
-- Passwords hashed with BCrypt.
-- Session/JWT authentication (choose one and configure).
-- **Vote locking** after final submission; attempts after deadline are denied.
-- Role‑based access to admin/organizer routes.
-- H2 console enabled only for dev.
-
----
-
-## 📊 Results & Reports
-
-- Winner = nominee with max votes per category (tie‑break configurable).
-- Export **CSV/PDF** reports for archive and publishing.
-- Public winners page after voting window ends.
-
----
-
-## 🧰 Common Scripts
-
-```bash
-# Backend
-mvn -q test
-mvn -q package
-
-# Frontend
-npm run dev
-npm run build
-npm run preview
-```
-
----
-
-## 🤝 Contributing
-
-1. Create a feature branch from `dev` (e.g., `feature/uc-02-nominee-crud`).
-2. Commit with scope and use‑case ID (e.g., `UC‑02: prevent duplicate nominee`).
-3. Open a PR → Code review → Merge to `dev` → Release to `main`.
-
----
-
-## 🗺 Roadmap
-
-- 2FA for admins
-- Enhanced audit logs
-- Push notifications
-- Docker Compose for one‑command setup
-- CI (GitHub Actions)
-
----
-
-## 📄 License
-
-Academic coursework project; for internal educational use.
-
----
-
-## 🧭 Quick Start (Full Stack)
-
-```bash
-# terminal 1
-cd backend && mvn spring-boot:run
-
-# terminal 2
-cd voting-frontend && npm install && npm run dev
-```
+## 🔮 Future Enhancements
+- Native mobile app (push notifications)
+- Blockchain-backed vote audit trail
+- i18n (Sinhala/Tamil)
+- ML-based turnout predictions & anomaly detection
+- Microservices & containerization for scale
+****
